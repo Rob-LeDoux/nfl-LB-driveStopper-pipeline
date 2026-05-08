@@ -28,6 +28,7 @@ def create_event_rows(pbp):
                 "play_id": row.get("play_id"),
                 "defteam": row.get("defteam"),
                 "player_name": row.get("sack_player_name"),
+                "player_id": row.get("sack_player_id"),
                 "event_type": "sack",
                 "down": row.get("down"),
                 "ydstogo": row.get("ydstogo"),
@@ -47,6 +48,7 @@ def create_event_rows(pbp):
                 "play_id": row.get("play_id"),
                 "defteam": row.get("defteam"),
                 "player_name": row.get("tackle_for_loss_1_player_name"),
+                "player_id": row.get("tackle_for_loss_1_player_id"),
                 "event_type": "tackle_for_loss",
                 "down": row.get("down"),
                 "ydstogo": row.get("ydstogo"),
@@ -66,6 +68,7 @@ def create_event_rows(pbp):
                 "play_id": row.get("play_id"),
                 "defteam": row.get("defteam"),
                 "player_name": row.get("qb_hit_1_player_name"),
+                "player_id": row.get("qb_hit_1_player_id"),
                 "event_type": "qb_hit",
                 "down": row.get("down"),
                 "ydstogo": row.get("ydstogo"),
@@ -85,6 +88,7 @@ def create_event_rows(pbp):
                 "play_id": row.get("play_id"),
                 "defteam": row.get("defteam"),
                 "player_name": row.get("forced_fumble_1_player_name"),
+                "player_id": row.get("forced_fumble_1_player_id"),
                 "event_type": "forced_fumble",
                 "down": row.get("down"),
                 "ydstogo": row.get("ydstogo"),
@@ -102,25 +106,31 @@ def add_3rd_and_4th_down_stops(pbp, events_df):
     stop_events =[]
     
     tackle_columns = [
-        "solo_tackle_1_player_name",
-        "solo_tackle_2_player_name",
-        "assist_tackle_1_player_name",
-        "assist_tackle_2_player_name",
+        ("solo_tackle_1_player_name", "solo_tackle_1_player_id"),
+        ("solo_tackle_2_player_name", "solo_tackle_2_player_id"),
+        ("assist_tackle_1_player_name", "assist_tackle_1_player_id"),
+        ("assist_tackle_2_player_name", "assist_tackle_2_player_id"),
     ]
 
-    avail_tackle_cols = [col for col in tackle_columns if col in pbp.columns]
+    avail_tackle_cols = [(name_col, id_col)
+                         for name_col, id_col in tackle_columns
+                         if name_col in pbp.columns and id_col in pbp.columns
+    ]
+
+    avail_name_cols = [name_col for name_col, id_col in avail_tackle_cols]
 
     stop_plays = pbp[
         (pbp["down"].isin([3, 4])) &
         (pbp["play_type"].isin(["run", "pass"])) &
         (pbp["first_down"] == 0) &
-        (pbp[avail_tackle_cols].notna().any(axis=1))
+        (pbp[avail_name_cols].notna().any(axis=1))
     ].copy()
 
     for _, row in stop_plays.iterrows():
-        for col in avail_tackle_cols:
+        for name_col, id_col in avail_tackle_cols:
 
-            player_name = row.get(col)
+            player_name = row.get(name_col)
+            player_id = row.get(id_col)
 
             if pd.notna(player_name):
                 event_type = "3rd_down_stop" if row["down"] == 3 else "4th_down_stop"
@@ -131,6 +141,7 @@ def add_3rd_and_4th_down_stops(pbp, events_df):
                     "game_id": row.get("game_id"),
                     "play_id": row.get("play_id"),
                     "defteam": row.get("defteam"),
+                    "player_id": player_id,
                     "player_name": player_name,
                     "event_type": event_type,
                     "down": row.get("down"),
@@ -251,11 +262,27 @@ def save_outputs(events_df, summary_df, weekly_summary_df):
 
     print("Saved CSV and SQLite outputs.")
 
+#filter out non-LB events
+def filter_linebackers(events_df, seasons):
+    rosters = nfl.load_rosters(seasons).to_pandas()
+
+    lb_positions = ["LB", "ILB", "OLB", "MLB"]
+
+    linebackers = rosters[rosters["position"].isin(lb_positions)]
+                             
+    lb_ids = set(linebackers["gsis_id"].dropna())
+
+    events_df = events_df[events_df["player_id"].isin(lb_ids)].copy()
+
+    return events_df
+
+
 def main():
     pbp = load_data(SEASONS)
     
     events_df = create_event_rows(pbp)
     events_df = add_3rd_and_4th_down_stops(pbp, events_df)
+    events_df = filter_linebackers(events_df, SEASONS)
 
     summary_df = build_summary(events_df)
     weekly_summary_df = build_weekly_summary(events_df)
