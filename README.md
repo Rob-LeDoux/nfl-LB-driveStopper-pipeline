@@ -3,9 +3,9 @@ A Python data pipeline that transforms raw nflverse play-by-play data, cleans it
 
 The goal is to identify linebackers who create drive-changing plays such as sacks, tackles for loss, forced fumbles, QB hits, and 3rd/4th down stops.
 
-## Custom Metric
+## Metric
 
-The project creates a custom exploratory metric called Drive Stopper Score:
+The project creates an exploratory metric called Drive Stopper Score:
 
 Drive Stopper Score =
 (3 × forced fumbles)
@@ -17,7 +17,7 @@ Drive Stopper Score =
 
 ## Why This Matters
 
-Linebackers are often regarded as a lower-priotiy positiion, especially in the draft, but a Linebacker who can contribute to game changing drives stops cannot be ignored. 
+Linebackers, especially true inside linebackers and not edge rushers, are often regarded as a lower-priotiy positiion, especially in the draft, but a Linebacker who can contribute to game changing drives stops cannot be ignored. 
 
 ## Tools
 
