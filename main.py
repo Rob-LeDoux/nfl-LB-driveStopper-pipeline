@@ -6,7 +6,7 @@ from pathlib import Path
 OUTPUT_DIR = Path("output")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-SEASONS = [2025, 2026]
+SEASONS = [2024, 2025]
 
 def load_data(seasons):
     print(f"Loading play-by-play data for {seasons}...")
