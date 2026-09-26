@@ -6,7 +6,7 @@ from pathlib import Path
 OUTPUT_DIR = Path("output")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-SEASONS = [2025]
+SEASONS = [2025, 2026]
 
 def load_data(seasons):
     print(f"Loading play-by-play data for {seasons}...")
@@ -266,9 +266,9 @@ def save_outputs(events_df, summary_df, weekly_summary_df):
 def filter_linebackers(events_df, seasons):
     rosters = nfl.load_rosters(seasons).to_pandas()
 
-    lb_positions = ["LB", "ILB", "OLB", "MLB"]
+    lb_positions = ["ILB", "MLB", "LB"]
 
-    linebackers = rosters[rosters["position"].isin(lb_positions)]
+    linebackers = rosters[rosters["depth_chart_position"].isin(lb_positions)]
                              
     lb_ids = set(linebackers["gsis_id"].dropna())
 
